@@ -27,7 +27,16 @@ int Reader::ReadNewData()
 int Reader::Init()
 {
     fopen_s(&file, FILENAME, "rb");
-    dataSize = fread(data, 1, BUFFER_SIZE, file);
+    //dataSize = fread(data, 1, BUFFER_SIZE, file);
+
+    int read_bytes = fread(data, 1, BUFFER_SIZE, file);
+    if (read_bytes < BUFFER_SIZE)
+    {
+        if (feof(file))
+            isEof = true;
+    }
+    dataSize = read_bytes;
+
     //if (size < BUFFER_SIZE)
     //    isEof = true;
     return 0;
@@ -78,8 +87,8 @@ int Reader::FindNewPacket(uint8_t* buffer)
     {
         buffer[i] = data[dataPointer];
     }
-    if (data[dataPointer] == 0x1F)
-        dataPointer++; // skip 0x1F
+    //if (data[dataPointer] == 0x1F)
+    //    dataPointer++; // skip 0x1F
     if (dataPointer == dataSize)
     {
         if (isEof)

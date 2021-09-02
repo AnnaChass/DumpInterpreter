@@ -38,13 +38,15 @@ int Interpreter::Check0x1F()
 	{
 		return err;
 	}
+	reader.GetNBytes(1, curPacket + curPos);
+	curPos++;
 	return 0;
 }
 
 int Interpreter::CheckLength()
 {
 	reader.GetNBytes(2, curPacket + curPos);
-	data.length = curPacket[curPos] * 0x100 + curPacket[1];
+	data.length = curPacket[curPos] * 0x100 + curPacket[curPos + 1];
 	//data.length = *((uint16_t *)curPacket);
 	curPos += 2;
 	return 0;
@@ -79,8 +81,8 @@ int Interpreter::CheckTag()
 	reader.GetNBytes(1, curPacket + curPos);
 	if (curPacket[curPos] >= 0x19)
 	{
-		// ???????????????????????????
 		curPos--;
+		realLength--;
 		reader.ChangePos(-1); 
 		return ERR_HUGE_TAG;
 	}
@@ -161,21 +163,25 @@ int Interpreter::CheckCRC()
 	// read crc from dump
 	uint8_t crc_buf[2];
 	reader.GetNBytes(2, crc_buf);
-	////uint16_t crc = *(uint16_t*)crc_buf;
-	//uint16_t crc = crc_buf[0] * 0x100 + crc_buf[1];
+	//uint16_t crc = *(uint16_t*)crc_buf;
+	uint16_t crc = crc_buf[0] * 0x100 + crc_buf[1];
 
-	//// count real crc of the packet
-	//uint16_t i, tmp, real_crc = 0xffff;
-	//for (i = 0; i < data.length; i++)
-	//{
-	//	tmp = (real_crc >> 8) ^ (0x00ff & curPacket[i]);
-	//	real_crc = (real_crc << 8) ^ crc16_ccitt_table[tmp];
-	//}
-	//
-	//// compare crc and real crc
-	//if (crc == real_crc)
-	//	return 0;
-	//else return real_crc;
+	// count real crc of the packet
+	uint16_t i, tmp, real_crc = 0xffff;
+	for (i = 0; i < realLength + 3; i++)
+	{
+		tmp = (real_crc >> 8) ^ (0x00ff & curPacket[i]);
+		real_crc = (real_crc << 8) ^ crc16_ccitt_table[tmp];
+	}
+	
+	// compare crc and real crc
+	if (crc == real_crc)
+		return 0;
+	else
+	{
+		data.isCorrupted = true;
+		return real_crc;
+	}
 	return 0;
 }
 
