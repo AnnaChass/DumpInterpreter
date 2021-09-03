@@ -21,7 +21,7 @@ private:
 public:
 	int Init();
 	int GetNBytes(int n, uint8_t* buffer);
-	int FindNewPacket(uint8_t* buffer, int bufferPos);
+	int FindNewPacket();
 	int FindNext(uint16_t value); 
 	int GetTrashLength();
 	int ChangePos(int n);

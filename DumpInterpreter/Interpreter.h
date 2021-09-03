@@ -8,7 +8,6 @@
 #include "Struct.h"
 #include "Errors.h"
 
-#define MAX_BUFFER_SIZE 512
 #define MAX_MESSAGE_NUMBER 30
 
 class Interpreter
@@ -43,11 +42,10 @@ private:
 	Reader reader;
 	Printer printer;
 
-	uint8_t* trash;
 	uint8_t* curPacket;
 	unsigned int curPos = 0;
-	unsigned int trashPos = 0;
 	struct s_data data;
+	int bufferSize = 512;
 	int messagePos = 0;
 	int realLength = 0; // variable to check legth of the packet
 
@@ -63,6 +61,7 @@ private:
 	int Print();
 	int CleanPacket();
 	int CleanData();
+	int IncreasePacket();
 	int Deinit();
 
 public:

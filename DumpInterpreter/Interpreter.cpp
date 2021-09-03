@@ -35,8 +35,7 @@ int Interpreter::Start()
 
 int Interpreter::Init()
 {
-	trash = new uint8_t[MAX_BUFFER_SIZE];
-	curPacket = new uint8_t[MAX_BUFFER_SIZE];
+	curPacket = new uint8_t[bufferSize];
 	data.message = new struct s_message[MAX_MESSAGE_NUMBER];
 
 	reader.Init();
@@ -45,7 +44,7 @@ int Interpreter::Init()
 
 int Interpreter::Check0x1F()
 {
-	if (int err = reader.FindNewPacket(trash, trashPos))
+	if (int err = reader.FindNewPacket())
 	{
 		return err;
 	}
@@ -76,8 +75,6 @@ int Interpreter::CheckDescriminator()
 		// descriminator is incorrect or 0xF1 was a trash simbol
 		// anyway, skip this packet
 		data.discriminator = discriminator;
-		memcpy(trash + trashPos, curPacket - curPos, curPos); // it's not a packet, so clean curPacket 
-		trashPos += curPos;
 		curPos = 0;
 		return ERR_WRONG_PACKET;
 	}
@@ -109,6 +106,8 @@ int Interpreter::CheckMessage()
 			// else just go on
 		}
 		CheckMessageLength();
+		if (curPos + data.message[messagePos].length >= bufferSize)
+			IncreasePacket();
 		CheckValue();
 		messagePos++;
 		//break;
@@ -235,8 +234,6 @@ int Interpreter::CleanPacket()
 {
 	CleanData();
 	curPos = 0;
-	trashPos = 0;
-	trashPos = 0;
 	messagePos = 0;
 	realLength = 0;
 
@@ -260,9 +257,20 @@ int Interpreter::CleanData()
 	return 0;
 }
 
+int Interpreter::IncreasePacket()
+{
+	bufferSize *= 2;
+	uint8_t* newPacket = new uint8_t[bufferSize];
+	memcpy(newPacket, curPacket, curPos + 1);
+
+	delete[] curPacket;
+	curPacket = newPacket;
+
+	return 0;
+}
+
 int Interpreter::Deinit()
 {
-	delete[] trash;
 	delete[] curPacket;
 	delete[] data.message;
 
