@@ -9,9 +9,20 @@ int Interpreter::Start()
 		if (Check0x1F() == ERR_EOF)
 			break;
 		CheckLength();
-		CheckDescriptor();
-		if (CheckMessage())
+		if (CheckDescriminator() == ERR_WRONG_PACKET)
+		{
 			data.isCorrupted = true;
+			Print();
+			CleanPacket();
+			continue;
+		}
+		if (CheckMessage())
+		{
+			data.isCorrupted = true;
+			Print();
+			CleanPacket();
+			continue;
+		}
 		CheckCRC();
 		Print();
 		CleanPacket();
@@ -34,7 +45,7 @@ int Interpreter::Init()
 
 int Interpreter::Check0x1F()
 {
-	if (int err = reader.FindNewPacket(trash))
+	if (int err = reader.FindNewPacket(trash, trashPos))
 	{
 		return err;
 	}
@@ -52,11 +63,25 @@ int Interpreter::CheckLength()
 	return 0;
 }
 
-int Interpreter::CheckDescriptor()
+int Interpreter::CheckDescriminator()
 {
 	reader.GetNBytes(2, curPacket + curPos);
-	//data.descriptor = *((uint16_t*)curPacket);
-	data.descriptor = curPacket[curPos] * 0x100 + curPacket[curPos + 1];
+
+	uint16_t discriminator = curPacket[curPos] * 0x100 + curPacket[curPos + 1];
+	if (!(discriminator == 0x96FB ||
+		discriminator == 0x97FB ||
+		discriminator == 0x96FC ||
+		discriminator == 0x97FC))
+	{
+		// descriminator is incorrect or 0xF1 was a trash simbol
+		// anyway, skip this packet
+		data.discriminator = discriminator;
+		memcpy(trash + trashPos, curPacket - curPos, curPos); // it's not a packet, so clean curPacket 
+		trashPos += curPos;
+		curPos = 0;
+		return ERR_WRONG_PACKET;
+	}
+	data.discriminator = discriminator;
 	curPos += 2;
 	realLength += 2;
 	return 0;
@@ -66,8 +91,23 @@ int Interpreter::CheckMessage()
 {
 	while (realLength < data.length)
 	{
-		if (int err = CheckTag()) 
-			return err;
+		if (int err = CheckTag())
+		{
+			int oldRealLength = realLength; // save pos of the tag
+			CheckMessageLength();
+			CheckValue();
+			messagePos++;
+			if (int err2 = CheckTag())
+			{
+				// assume there is incorrect Length, so forget last message and go to CheckCrc()
+				int diff = realLength - oldRealLength;
+				realLength = oldRealLength;
+				curPos -= diff + 1;
+				reader.ChangePos((-1) * (diff + 1));
+				return err2;
+			}
+			// else just go on
+		}
 		CheckMessageLength();
 		CheckValue();
 		messagePos++;
@@ -79,11 +119,11 @@ int Interpreter::CheckMessage()
 int Interpreter::CheckTag()
 {
 	reader.GetNBytes(1, curPacket + curPos);
-	if (curPacket[curPos] >= 0x19)
+	if (curPacket[curPos] >= 0x19 || curPacket[curPos] == 0x00 || curPacket[curPos] == 0x02)
 	{
-		curPos--;
-		realLength--;
-		reader.ChangePos(-1); 
+		data.message[messagePos].tag = INCORRECT_TAG;
+		curPos++;
+		realLength++;
 		return ERR_HUGE_TAG;
 	}
 	data.message[messagePos].tag = curPacket[curPos];
@@ -196,6 +236,7 @@ int Interpreter::CleanPacket()
 	CleanData();
 	curPos = 0;
 	trashPos = 0;
+	trashPos = 0;
 	messagePos = 0;
 	realLength = 0;
 
@@ -204,7 +245,7 @@ int Interpreter::CleanPacket()
 
 int Interpreter::CleanData()
 {
-	data.descriptor = 0;
+	data.discriminator = 0;
 	data.length = 0;
 	data.isCorrupted = false;
 	for (int i = 0; i < messagePos; i++)

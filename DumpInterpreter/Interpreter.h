@@ -54,7 +54,7 @@ private:
 	int Init();
 	int Check0x1F();
 	int CheckLength();
-	int CheckDescriptor();
+	int CheckDescriminator();
 	int CheckMessage();
 	int CheckTag();
 	int CheckMessageLength();

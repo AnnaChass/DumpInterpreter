@@ -14,7 +14,7 @@ struct s_data
 {
 	bool isCorrupted = false;
 	uint16_t length;
-	uint16_t descriptor;
+	uint16_t discriminator;
 	struct s_message* message;
 };
 

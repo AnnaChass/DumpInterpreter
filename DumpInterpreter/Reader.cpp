@@ -71,7 +71,7 @@ int Reader::ChangePos(int n)
 
 // find next occurence of 0x1F
 // fill in the buffer with skipped data
-int Reader::FindNewPacket(uint8_t* buffer)
+int Reader::FindNewPacket(uint8_t* buffer, int bufferPos)
 {
     /*if (feof(file))
         return ERR_EOF;
@@ -85,7 +85,7 @@ int Reader::FindNewPacket(uint8_t* buffer)
 
     for (int i = 0; data[dataPointer] != 0x1F && dataPointer < dataSize; dataPointer++, i++)
     {
-        buffer[i] = data[dataPointer];
+        buffer[bufferPos + i] = data[dataPointer];
     }
     //if (data[dataPointer] == 0x1F)
     //    dataPointer++; // skip 0x1F
