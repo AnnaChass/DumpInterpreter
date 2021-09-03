@@ -24,6 +24,16 @@ int Reader::ReadNewData()
     return 0;
 }
 
+Reader::Reader()
+{
+    Init();
+}
+
+Reader::~Reader()
+{
+    Deinit();
+}
+
 int Reader::Init()
 {
     fopen_s(&file, FILENAME, "rb");
@@ -55,6 +65,11 @@ int Reader::GetNBytes(int n, uint8_t* buffer)
 // return distance to next occurrence
 int Reader::FindNext(uint16_t value)
 {
+    uint8_t val[2];
+    val[1] = value;
+    val[0] = value >> 8;
+    while (!(data[dataPointer] == val[0] && data[dataPointer + 1] == val[1]) && dataPointer + 1 < dataSize)
+        dataPointer++;
     return 0;
 }
 

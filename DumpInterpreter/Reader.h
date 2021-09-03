@@ -19,6 +19,8 @@ private:
 	int ReadNewData();
 
 public:
+	Reader();
+	~Reader();
 	int Init();
 	int GetNBytes(int n, uint8_t* buffer);
 	int FindNewPacket();

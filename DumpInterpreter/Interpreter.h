@@ -65,7 +65,8 @@ private:
 	int Deinit();
 
 public:
-	Interpreter() {};
+	Interpreter();
 	int Start();
+	~Interpreter();
 };
 

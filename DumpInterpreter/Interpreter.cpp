@@ -1,9 +1,12 @@
 #include "Interpreter.h"
 
-int Interpreter::Start()
+Interpreter::Interpreter()
 {
 	Init();
+}
 
+int Interpreter::Start()
+{
 	while (true)
 	{
 		if (Check0x1F() == ERR_EOF)
@@ -28,9 +31,12 @@ int Interpreter::Start()
 		CleanPacket();
 	}
 
-	Deinit();
-
 	return 0;
+}
+
+Interpreter::~Interpreter()
+{
+	Deinit();
 }
 
 int Interpreter::Init()
@@ -38,7 +44,6 @@ int Interpreter::Init()
 	curPacket = new uint8_t[bufferSize];
 	data.message = new struct s_message[MAX_MESSAGE_NUMBER];
 
-	reader.Init();
 	return 0;
 }
 
@@ -274,6 +279,5 @@ int Interpreter::Deinit()
 	delete[] curPacket;
 	delete[] data.message;
 
-	reader.Deinit();
 	return 0;
 }
