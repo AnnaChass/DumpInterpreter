@@ -1,8 +1,4 @@
 
-// гюлемхрэ STRING мю дпсцсч ярпнйс
-
-
-
 #include "Interpreter.h"
 
 
